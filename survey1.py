@@ -135,14 +135,30 @@ st.markdown("""
     box-shadow: none !important;           /* 포커스 시 과한 그림자 제거 */
   }
 
-  /* 입력 텍스트 가시성 강제 (다크테마 잔류/브라우저 자동완성 이슈 대응) */
-  .stTextInput input,
-  .stTextArea textarea,
-  div[data-baseweb="select"] input,
-  div[data-baseweb="select"] [contenteditable="true"] {
+  /* 입력값은 진하게, placeholder는 연하게 보이도록 */
+  /* 기본 placeholder 색 */
+  ::placeholder { color:#b7bec8 !important; opacity:1 !important; }
+  input::placeholder, textarea::placeholder { color:#b7bec8 !important; }
+  
+  /* 아직 입력 전(placeholder가 보일 때): 연한 색 */
+  .stTextInput input:placeholder-shown,
+  .stTextArea textarea:placeholder-shown,
+  div[data-baseweb="input"] input:placeholder-shown,
+  div[data-baseweb="select"] input:placeholder-shown,
+  div[data-baseweb="select"] [contenteditable="true"]:placeholder-shown {
+    color:#b7bec8 !important;
+    -webkit-text-fill-color:#b7bec8 !important;
+  }
+  
+  /* 값이 입력된 상태: 진한 본문 색 */
+  .stTextInput input:not(:placeholder-shown),
+  .stTextArea textarea:not(:placeholder-shown),
+  div[data-baseweb="input"] input:not(:placeholder-shown),
+  div[data-baseweb="select"] input:not(:placeholder-shown),
+  div[data-baseweb="select"] [contenteditable="true"]:not(:placeholder-shown) {
     color:#111111 !important;
     caret-color:#111111 !important;
-    -webkit-text-fill-color:#111111 !important; /* Safari */
+    -webkit-text-fill-color:#111111 !important;
   }
 
   /* Reduce overall input outline darkness */
@@ -154,9 +170,6 @@ st.markdown("""
     box-shadow: none !important;
   }
 
-  /* placeholder 가독성 */
-  ::placeholder { color:#9aa0a6 !important; opacity:1 !important; }
-  input::placeholder, textarea::placeholder { color:#9aa0a6 !important; }
 
   /* 자동완성 배경 제거 */
   input:-webkit-autofill,
