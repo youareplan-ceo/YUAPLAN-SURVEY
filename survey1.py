@@ -210,6 +210,9 @@ st.markdown("""
       overscroll-behavior:contain;
     }
   }
+  /* 동의 영역 캡션 줄맞춤용 */
+  .agree-caption{font-size:12px;color:#6b7280;margin-top:4px;min-height:40px;line-height:1.5}
+  @media (max-width: 768px){.agree-caption{min-height:52px}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -434,10 +437,29 @@ def main():
         col_agree1, col_agree2 = st.columns(2)
         with col_agree1:
             privacy_agree = st.checkbox("개인정보 수집·이용 동의 (필수)")
-            st.caption("상담 목적. 1년 보관 후 삭제.")
+            st.markdown("<div class='agree-caption'>상담 확인·자격 검토·연락 목적. 상담 완료 후 1년 보관 또는 철회 시 즉시 삭제.</div>", unsafe_allow_html=True)
+            with st.expander("개인정보 수집·이용 동의 전문 보기"):
+                st.markdown(
+                    """
+                    **수집·이용 목적**: 상담 신청 확인, 자격 검토, 연락 및 안내  
+                    **수집 항목**: 성함, 연락처, 이메일(선택), 지역, 업종, 사업자 형태, 직원 수, 매출, 필요 자금, 정책자금 이용 경험, 자격 확인 항목  
+                    **보유·이용 기간**: 상담 완료 후 1년 또는 동의 철회 시까지 (관련 법령의 별도 보존기간이 있는 경우 그에 따름)  
+                    **제공 및 위탁**: 제3자 제공 없음. 시스템 운영/고객응대 목적의 처리위탁이 필요한 경우 계약서에 고지 후 최소한으로 위탁  
+                    **동의 철회**: 카카오채널/이메일/전화로 철회 요청 시 지체 없이 삭제
+                    """
+                )
         with col_agree2:
             marketing_agree = st.checkbox("마케팅 정보 수신 동의 (선택)")
-            st.caption("신규 정책자금 알림. 언제든 거부 가능.")
+            st.markdown("<div class='agree-caption'>신규 정책자금·지원사업 알림. 언제든지 수신 거부 가능.</div>", unsafe_allow_html=True)
+            with st.expander("마케팅 정보 수신 동의 전문 보기"):
+                st.markdown(
+                    """
+                    **수신 내용**: 신규 정책자금, 지원사업, 이벤트/세미나 안내  
+                    **수신 방법**: 카카오톡/문자/이메일 중 일부  
+                    **보유·이용 기간**: 동의 철회 시까지  
+                    **철회 방법**: 채널 차단, 문자 내 수신거부 링크, 이메일 회신 등으로 언제든지 철회 가능
+                    """
+                )
 
         submitted = st.form_submit_button("📩 정책자금 상담 신청", type="primary")
         
