@@ -1,5 +1,6 @@
 
 import streamlit as st
+import streamlit.components.v1 as components
 import requests
 import json
 from datetime import datetime
@@ -92,15 +93,20 @@ st.markdown("""
     margin:0;
   }
 
-  /* 버튼(제출) 관공서 파랑 */
-  .stButton > button{
-    background:var(--gov-blue) !important;
+  /* 버튼(제출) 관공서 네이비 */
+  div[data-testid="stFormSubmitButton"] button,
+  div[data-testid="stFormSubmitButton"] button *,
+  .stButton > button,
+  .stButton > button *{
+    background:var(--gov-navy) !important;
     color:#fff !important;
-    border:1px solid var(--gov-blue) !important;
+    border:1px solid var(--gov-navy) !important;
     font-weight:600;
     padding:10px 16px;
     border-radius:6px;
+    fill:#ffffff !important;
   }
+  div[data-testid="stFormSubmitButton"] button:hover,
   .stButton > button:hover{
     filter:brightness(0.95);
   }
@@ -191,8 +197,11 @@ st.markdown("""
   /* ===== CTA 버튼(채팅/채널추가) 정리 ===== */
   .cta-wrap{margin-top:10px;padding:12px;border:1px solid var(--gov-border);border-radius:8px;background:#fafafa}
   .cta-btn{display:block;text-align:center;font-weight:700;text-decoration:none;padding:12px 16px;border-radius:10px}
-  .cta-primary{background:#FEE500;color:#3C1E1E}
+  .cta-primary{background:var(--gov-navy);color:#ffffff;border:1px solid var(--gov-navy)}
   .cta-secondary{background:#fff;color:#005BAC;border:1px solid #005BAC}
+  /* Kakao brand button (yellow) */
+  .cta-kakao{background:#FEE500;color:#3C1E1E;border:1px solid #FEE500}
+  .cta-kakao:hover{filter:brightness(0.97)}
   .cta-gap{height:8px}
 
   /* 연락처 자동 포맷 안내 텍스트 여백 정리 */
@@ -335,18 +344,7 @@ def main():
         """
     )
     
-    # 사이드바
-    with st.sidebar:
-        st.markdown("### 💡 서비스 소개")
-        st.success("✅ 전문가 무료 상담")
-        st.success("✅ 맞춤형 매칭 서비스")
-        
-        st.markdown("---")
-        st.markdown("### 📞 상담 프로세스")
-        st.info("1️⃣ 3분 설문 완료\n"
-                "2️⃣ 1영업일 내 전문가 연락\n"
-                "3️⃣ 무료 상담 진행\n"
-                "4️⃣ 맞춤 정책자금 안내")
+    # 사이드바 제거: 더 넓은 화면 사용 (기존 사이드바 삭제)
     
     # 설문지
     st.markdown("### 📝 1차 설문 - 기본 정보")
@@ -553,12 +551,12 @@ def main():
                             f"""
       <div class="cta-wrap">
         <div style="margin-bottom:8px;color:#333;">카카오 채널에서 바로 문의하시면 가장 빠르게 도와드릴 수 있어요.</div>
-        <a class="cta-btn cta-primary" href="{KAKAO_CHANNEL_URL}" target="_blank">💬 카카오 채널 추가 및 대화하기</a>
+        <a class="cta-btn cta-kakao" href="{KAKAO_CHANNEL_URL}" target="_blank">💬 카카오 채널 추가 및 대화하기</a>
       </div>
       """,
                             unsafe_allow_html=True,
                         )
-                        st.markdown(
+                        components.html(
                             """
 <div id="auto-return-wrap" style="margin-top:10px;padding:12px;border:1px solid var(--gov-border);border-radius:8px;background:#fff;">
   <div id="auto-return-msg" style="color:#374151;margin-bottom:8px;line-height:1.5;">
@@ -567,10 +565,10 @@ def main():
     필요하시면 아래 버튼으로 자동 이동을 취소하실 수 있어요.
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
-    <a class="cta-btn cta-secondary" id="stay-here-btn" href="#" onclick="window.__stayHere=true;return false;" aria-label="자동 이동 취소">
+    <a class="cta-btn cta-secondary" id="stay-here-btn" href="#" aria-label="자동 이동 취소">
       ⏸️ 이 창에 머물기
     </a>
-    <a class="cta-btn cta-primary" id="go-now-btn" href="#" onclick="(function(){try{window.__forceGoNow=true;}catch(e){}})();return false;" aria-label="지금 바로 이전 화면으로 이동">
+    <a class="cta-btn cta-primary" id="go-now-btn" href="#" aria-label="지금 바로 이전 화면으로 이동">
       🔙 지금 바로 돌아가기
     </a>
   </div>
@@ -584,9 +582,7 @@ def main():
   live.style.position='absolute';
   live.style.left='-9999px';
   document.body.appendChild(live);
-
   function updateLive(msg){ try{ live.textContent = msg; }catch(e){} }
-
   function goBack(){
     // 1) referrer 우선
     if (document.referrer && document.referrer !== location.href) { location.replace(document.referrer); return; }
@@ -601,10 +597,8 @@ def main():
     // 4) 최종 기본값
     location.replace('/');
   }
-
   var left = 5;
   var el = document.getElementById('countdown');
-
   // 강제 이동 버튼
   var goNow = document.getElementById('go-now-btn');
   if (goNow){
@@ -613,7 +607,14 @@ def main():
       goBack();
     });
   }
-
+  // 머물기 버튼
+  var stay = document.getElementById('stay-here-btn');
+  if (stay){
+    stay.addEventListener('click', function(e){
+      e.preventDefault();
+      window.__stayHere = true;
+    });
+  }
   // 타이머
   var timer = setInterval(function(){
     if (window.__stayHere === true) {
@@ -636,13 +637,13 @@ def main():
       if (el) { el.textContent = left; updateLive(left + '초 남았습니다.'); }
     }
   }, 1000);
-
   // 초기 announce
   updateLive('5초 후 이전 화면으로 이동합니다.');
 })();
 </script>
 """,
-                            unsafe_allow_html=True,
+                            height=240,
+                            scrolling=False,
                         )
                     else:
                         msg = result.get('message', '알 수 없는 오류로 실패했습니다. 잠시 후 다시 시도해주세요.')
