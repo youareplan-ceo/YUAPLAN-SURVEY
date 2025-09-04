@@ -8,6 +8,13 @@ import re
 import random
 import os
 
+# 페이지 레이아웃/메타 고정(배포/로컬 동일하게 보이도록)
+st.set_page_config(
+    page_title="정부 지원금·정책자금 상담 신청",
+    page_icon="📝",
+    layout="centered"  # 필요시 "wide" 로 변경 가능
+)
+
 # ---- 전화번호 포맷 유틸 ----
 def _digits_only(s: str) -> str:
     return re.sub(r"[^0-9]", "", s or "")
