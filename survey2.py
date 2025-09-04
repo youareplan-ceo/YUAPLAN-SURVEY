@@ -301,6 +301,53 @@ st.markdown("""
   /* Kakao brand button (yellow) */
   .cta-kakao{background:#FEE500;color:#3C1E1E;border:1px solid #FEE500}
   .cta-kakao:hover{filter:brightness(0.97)}
+
+  /* Selected option chips (BaseWeb tags) – improve contrast */
+  .stMultiSelect [data-baseweb="tag"],
+  .stSelectbox [data-baseweb="tag"],
+  div[data-baseweb="select"] [data-baseweb="tag"] {
+    background: #0B5BD3 !important; /* gov blue */
+    color: #ffffff !important;
+    border: 0 !important;
+  }
+  /* Ensure text & close icon inside chips are white */
+  .stMultiSelect [data-baseweb="tag"] *,
+  .stSelectbox [data-baseweb="tag"] *,
+  div[data-baseweb="select"] [data-baseweb="tag"] * {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+  }
+
+  /* === Dropdown (BaseWeb popover) readability & layering === */
+  /* Ensure the options popover sits above everything and is readable on light theme */
+  div[data-baseweb="popover"]{ 
+    z-index: 10000 !important; 
+  }
+  div[data-baseweb="popover"] div[role="listbox"]{
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;  /* same as --gov-border */
+    box-shadow: 0 8px 24px rgba(16,24,40,.12) !important;
+    max-height: 42vh !important;
+    overflow-y: auto !important;
+  }
+  /* Option rows: default text color, clear hover/selected states */
+  div[role="option"]{
+    color: #111111 !important;
+    background: #ffffff !important;
+  }
+  div[role="option"][aria-selected="true"]{
+    background: #e8f1ff !important;  /* selected bg */
+    color: #0b5bd3 !important;        /* selected text */
+  }
+  div[role="option"]:hover{
+    background: #f3f6fb !important;   /* hover bg */
+    color: #111111 !important;
+  }
+
+  /* iOS viewport-safe area & mobile keyboard overlap reduction */
+  @media (max-width: 768px){
+    .stApp{ padding-bottom: calc(env(safe-area-inset-bottom,0px) + 200px) !important; }
+  }
 </style>
 """, unsafe_allow_html=True)
 
@@ -537,7 +584,7 @@ def main():
                         'email': email,
                         'biz_reg_no': formatted_biz,
                         'business_name': company,
-                        'startup_date': startup_date.strftime('%Y-%m'),
+                        'startup_date': startup_date.strftime('%Y-%m-%d'),
                         'revenue_y1': revenue_y1,
                         'revenue_y2': revenue_y2,
                         'revenue_y3': revenue_y3,
