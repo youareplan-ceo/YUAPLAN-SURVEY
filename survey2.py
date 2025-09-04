@@ -415,6 +415,8 @@ def main():
         # A. 기본 정보
         st.markdown("#### 👤 기본 정보")
         name = st.text_input("성함 (필수)", placeholder="홍길동").strip()
+        parent_rid = st.text_input("1차 접수번호 (필수)", placeholder="예: YP202509041234")
+        st.caption("1차 설문 제출 시 발급된 접수번호를 입력하세요.")
         phone_raw = st.text_input(
             "연락처 (필수)",
             placeholder="예: 01012345678"
@@ -576,6 +578,9 @@ def main():
             elif not privacy_agree:
                 st.error("개인정보 수집·이용 동의는 필수입니다.")
                 st.session_state.submitted_2 = False
+            elif not parent_rid:
+                st.error("1차 접수번호는 필수입니다.")
+                st.session_state.submitted_2 = False
             else:
                 with st.spinner("제출 중..."):
                     survey_data = {
@@ -602,7 +607,7 @@ def main():
                         'privacy_agree': privacy_agree,
                         'marketing_agree': marketing_agree,
                         'release_version': RELEASE_VERSION,
-                        'parent_receipt_no': (qp.get("rid") if 'qp' in locals() and isinstance(qp, dict) else None),
+                        'parent_receipt_no': parent_rid,
                     }
 
                     result = save_to_google_sheet(survey_data, test_mode=is_test_mode)
