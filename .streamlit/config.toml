@@ -1,0 +1,9 @@
+[theme]
+base = "light"
+primaryColor = "#002855"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#111111"
+
+[global]
+showWarningOnDirectExecution = false
