@@ -87,11 +87,15 @@ st.markdown("""
   .gov-topbar {
     width: 100%;
     background: var(--gov-navy);
-    color: #fff;
+    color: #ffffff !important;
     font-size: 13px;
     padding: 8px 14px;
     letter-spacing: 0.2px;
     border-bottom: 3px solid var(--gov-blue);
+  }
+  .gov-topbar * {
+    color: #ffffff !important;
+    fill: #ffffff !important;
   }
   
   .gov-hero {
