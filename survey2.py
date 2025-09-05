@@ -34,7 +34,7 @@ def _biz_on_change():
     d = _digits_only(raw)
     st.session_state.biz_no_input = format_biz_no(d)
 
-RELEASE_VERSION = "v2025-09-03-clean-fix"
+RELEASE_VERSION = "v2025-09-05-1752"
 
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwH8OKYidK3GRtcx5lTvvmih6iTidS0yhuoSu3DcWn8WPl_LZ6gBcnbZHvqDksDX7DD/exec"
 
@@ -434,16 +434,24 @@ def main():
     v = validate_access_token(magic_token)
     if not v.get("ok"):
         # Blocked screen
-        msg = v.get("message", "토큰 검증 실패")
+        msg = v.get("message") or v.get("error") or "토큰 검증 실패"
         st.error(f"접속이 차단되었습니다: {msg}")
         st.markdown(f"<div class='cta-wrap'><a class='cta-btn cta-kakao' href='{KAKAO_CHAT_URL}' target='_blank'>💬 새 링크 재발급 요청</a></div>", unsafe_allow_html=True)
         return
 
     # Valid token
     parent_rid_fixed = v.get("parent_receipt_no", "")
+    # Support either remaining_minutes or remaining_seconds from GAS
     remain_min = v.get("remaining_minutes")
+    if remain_min is None:
+        sec = v.get("remaining_seconds")
+        if isinstance(sec, (int, float)):
+            remain_min = max(0, int(round(sec / 60)))
     if remain_min is not None:
-        st.markdown(f"<div style='margin:8px 0 0 0;'><span style='display:inline-block;background:#e8f1ff;color:#0b5bd3;border:1px solid #b6c2d5;padding:6px 10px;border-radius:999px;font-weight:600;'>남은 시간: {int(remain_min)}분</span></div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<div style='margin:8px 0 0 0;'><span style='display:inline-block;background:#e8f1ff;color:#0b5bd3;border:1px solid #b6c2d5;padding:6px 10px;border-radius:999px;font-weight:600;'>남은 시간: {int(remain_min)}분</span></div>",
+            unsafe_allow_html=True,
+        )
 
     st.info("✔ 1차 상담 후 진행하는 **심화 진단** 절차입니다.")
     # 연락처/사업자등록번호 입력값은 폼 내에서 처리 (실시간 콜백 제거)
@@ -656,7 +664,7 @@ def main():
                         'magic_token': magic_token,
                     }
 
-                    result = save_to_google_sheet(survey_data, test_mode=is_test_mode)
+                    result = save_to_google_sheet(survey_data, timeout_sec=12, retries=0, test_mode=is_test_mode)
 
                     if result.get('status') in ('success', 'test'):
                         st.success("✅ 2차 설문 제출 완료!")
