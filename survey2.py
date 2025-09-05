@@ -3,6 +3,7 @@ import requests
 from datetime import datetime
 import re
 import os
+from typing import Optional
 
 st.set_page_config(page_title="유아플랜 정책자금 2차 심화진단", page_icon="📝", layout="centered")
 
@@ -36,6 +37,10 @@ def _biz_on_change():
 RELEASE_VERSION = "v2025-09-03-clean-fix"
 
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwH8OKYidK3GRtcx5lTvvmih6iTidS0yhuoSu3DcWn8WPl_LZ6gBcnbZHvqDksDX7DD/exec"
+
+# Token validation API (1차 GAS)
+TOKEN_API_URL = "https://script.google.com/macros/s/AKfycbwb4rHgQepBGE4wwS-YIap8uY_4IUxGPLRhTQ960ITUA6KgfiWVZL91SOOMrdxpQ-WC/exec"
+INTERNAL_SHARED_KEY = "youareplan"  # must match 1차 GAS
 
 # API token with fallback
 try:
@@ -355,6 +360,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def validate_access_token(token: str, timeout_sec: int = 10) -> dict:
+    """Call 1차 GAS to validate token. Returns dict like {ok, message, parent_receipt_no, remaining_minutes}.
+    """
+    try:
+        payload = {"action": "validate", "token": token, "api_token": INTERNAL_SHARED_KEY}
+        resp = requests.post(TOKEN_API_URL, json=payload, headers={'Content-Type': 'application/json'}, timeout=timeout_sec)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as e:
+        return {"ok": False, "message": str(e)}
+
 def save_to_google_sheet(data, timeout_sec: int = 12, retries: int = 2, test_mode: bool = False):
     """Google Apps Script로 데이터 전송"""
     if test_mode:
@@ -397,15 +413,37 @@ def main():
     
     st.markdown("##### 맞춤형 정책자금 매칭을 위해 상세 정보를 입력해주세요.")
 
-    # 쿼리 파라미터 안전 처리
+    # 쿼리 파라미터 처리 & 토큰 검증
     try:
         qp = st.query_params
         is_test_mode = qp.get("test") == "true"
-    except:
+        magic_token = qp.get("t")
+    except Exception:
         is_test_mode = False
+        magic_token = None
 
     if is_test_mode:
         st.warning("⚠️ 테스트 모드 - 실제 저장되지 않습니다.")
+
+    # Require token
+    if not magic_token:
+        st.error("접근 토큰이 없습니다. 담당자가 발송한 링크로 접속해 주세요.")
+        st.markdown(f"<div class='cta-wrap'><a class='cta-btn cta-kakao' href='{KAKAO_CHAT_URL}' target='_blank'>💬 재발급 요청하기</a></div>", unsafe_allow_html=True)
+        return
+
+    v = validate_access_token(magic_token)
+    if not v.get("ok"):
+        # Blocked screen
+        msg = v.get("message", "토큰 검증 실패")
+        st.error(f"접속이 차단되었습니다: {msg}")
+        st.markdown(f"<div class='cta-wrap'><a class='cta-btn cta-kakao' href='{KAKAO_CHAT_URL}' target='_blank'>💬 새 링크 재발급 요청</a></div>", unsafe_allow_html=True)
+        return
+
+    # Valid token
+    parent_rid_fixed = v.get("parent_receipt_no", "")
+    remain_min = v.get("remaining_minutes")
+    if remain_min is not None:
+        st.markdown(f"<div style='margin:8px 0 0 0;'><span style='display:inline-block;background:#e8f1ff;color:#0b5bd3;border:1px solid #b6c2d5;padding:6px 10px;border-radius:999px;font-weight:600;'>남은 시간: {int(remain_min)}분</span></div>", unsafe_allow_html=True)
 
     st.info("✔ 1차 상담 후 진행하는 **심화 진단** 절차입니다.")
     # 연락처/사업자등록번호 입력값은 폼 내에서 처리 (실시간 콜백 제거)
@@ -419,15 +457,17 @@ def main():
         # A. 기본 정보
         st.markdown("#### 👤 기본 정보")
         name = st.text_input("성함 (필수)", placeholder="홍길동").strip()
-        parent_rid = st.text_input("1차 접수번호 (필수)", placeholder="예: YP202509041234")
-        st.caption("1차 설문 제출 시 발급된 접수번호를 입력하세요.")
+        # 1차 접수번호는 토큰에서 고정됨
+        parent_rid = parent_rid_fixed
+        st.text_input("1차 접수번호", value=parent_rid, disabled=True)
+        st.caption("초대 링크에 포함된 접수번호로 자동 설정됩니다.")
         phone_raw = st.text_input(
             "연락처 (필수)",
             placeholder="예: 01012345678"
         )
         st.caption("숫자만 입력해도 됩니다. 예: 01012345678")
         biz_no_raw = st.text_input(
-            "사업자등록번호 (필수)",
+            "사업자등록번호 (선택)",
             placeholder="예: 0000000000"
         )
         st.caption("10자리 숫자입니다. 예: 1234567890")
@@ -568,7 +608,8 @@ def main():
             phone_digits = _digits_only(formatted_phone)
             biz_digits = _digits_only(formatted_biz)
             phone_ok = (len(phone_digits) == 11 and phone_digits.startswith("010"))
-            biz_ok = (len(biz_digits) == 10)
+            # 사업자번호는 선택 입력 (예비창업자 가능)
+            biz_ok = (len(biz_digits) == 0) or (len(biz_digits) == 10)
 
             if not name_ok:
                 st.error("성함은 2자 이상 입력해주세요.")
@@ -577,7 +618,7 @@ def main():
                 st.error("연락처는 010으로 시작하는 11자리여야 합니다. 예: 010-1234-5678")
                 st.session_state.submitted_2 = False
             elif not biz_ok:
-                st.error("사업자등록번호는 10자리여야 합니다. 예: 000-00-00000")
+                st.error("사업자등록번호는 비워두거나 10자리로 입력해주세요.")
                 st.session_state.submitted_2 = False
             elif not privacy_agree:
                 st.error("개인정보 수집·이용 동의는 필수입니다.")
@@ -612,6 +653,7 @@ def main():
                         'marketing_agree': marketing_agree,
                         'release_version': RELEASE_VERSION,
                         'parent_receipt_no': parent_rid,
+                        'magic_token': magic_token,
                     }
 
                     result = save_to_google_sheet(survey_data, test_mode=is_test_mode)
